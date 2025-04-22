@@ -43,6 +43,8 @@ const RegistrationSuccess = ({ onClose, token }) => {
     if (currentStep === 1) {
       setCurrentStep(2);
     } else {
+      // Store the token in localStorage before navigating to profile setup
+      localStorage.setItem('token', token);
       onClose();
       navigate('/profile-setup');
     }

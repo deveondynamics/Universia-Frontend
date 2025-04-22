@@ -42,9 +42,12 @@ const ProfileSetup = () => {
 
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/login');
+      setErrors({ general: 'Authentication token not found. Please log in again.' });
+      setLoading(false);
       return;
     }
+
+    console.log("Using token for profile update:", token);
 
     // Create form data for file upload
     const formDataToSend = new FormData();
@@ -55,16 +58,30 @@ const ProfileSetup = () => {
     }
 
     try {
-      await axios.put('http://localhost:8000/api/profile/', formDataToSend, {
+      const response = await axios.put('http://localhost:8000/api/profile/', formDataToSend, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
+      console.log("Profile update successful:", response.data);
       navigate('/profile');
     } catch (err) {
-      console.error('Error updating profile:', err.response?.data);
-      setErrors(err.response?.data || { general: 'Failed to update profile' });
+      console.error('Error updating profile:', err);
+      
+      if (err.response) {
+        if (err.response.status === 401) {
+          setErrors({ general: 'Authentication failed. Your session may have expired. Please log in again.' });
+        } else {
+          setErrors(err.response.data || { general: 'Failed to update profile' });
+        }
+      } else if (err.request) {
+        // The request was made but no response was received
+        setErrors({ general: 'No response from server. Please check your connection.' });
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        setErrors({ general: `Error: ${err.message}` });
+      }
     } finally {
       setLoading(false);
     }
@@ -168,7 +185,21 @@ const ProfileSetup = () => {
           </div>
         </div>
 
-        {errors.general && <div className="general-error">{errors.general}</div>}
+        {errors.general && (
+          <div className="general-error" style={{
+            backgroundColor: '#f8d7da',
+            color: '#721c24',
+            padding: '12px 15px',
+            borderRadius: '4px',
+            marginBottom: '20px',
+            fontSize: '16px',
+            fontWeight: '500',
+            textAlign: 'center',
+            border: '1px solid #f5c6cb'
+          }}>
+            {errors.general}
+          </div>
+        )}
 
         <div className="form-actions">
           <button type="button" onClick={handleSkip} className="skip-button">Skip for now</button>

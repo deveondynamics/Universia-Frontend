@@ -1,6 +1,61 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        // Fetch profile data
+        const profileResponse = await axios.get('http://localhost:8000/api/profile/', {
+          headers: {
+            'Authorization': `Token ${token}`
+          }
+        });
+        setProfile(profileResponse.data);
+
+        // Fetch user data
+        const userResponse = await axios.get('http://localhost:8000/api/user/', {
+          headers: {
+            'Authorization': `Token ${token}`
+          }
+        });
+        setUser(userResponse.data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching profile data:', err);
+        setError('Failed to load profile data');
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
+
+  // Extract the username and display name from the user data
+  const username = user?.username || 'username';
+  const email = user?.email || 'No Email Found';
+  const dob = user?.date_of_birth || 'No Date of Birth Found';
+  const website = profile?.website || 'No Webiste Found';
+  const location = profile?.location || 'No Location Found';
+
+  const displayName = user ? `${user.first_name} ${user.last_name}` : 'Loading...';
+  const joinDate = user?.date_joined ? new Date(user.date_joined).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown';
+  const bio = profile?.bio || 'No bio available';
+
   return (
     <>
   <section>
@@ -479,22 +534,22 @@ const Profile = () => {
               <div className="col-lg-9">
                 <div className="group-feed">
                   <div className="group-avatar">
-                    <img src="assets/images/resources/profile-banner.jpg" alt="" />
+                    <img src={profile?.banner ? `http://localhost:8000${profile.banner}` : "assets/images/resources/profile-banner.jpg"} alt="Profile Banner" />
                     <a href="#" title="">
                       <i className="icofont-check-circled" />
-                      Follow
+                      {loading ? 'Loading...' : 'Follow'}
                     </a>
                     <figure className="group-dp">
-                      <img src="assets/images/resources/user.jpg" alt="" />
+                      <img src={profile?.profile_picture ? `http://localhost:8000${profile.profile_picture}` : "assets/images/resources/user.jpg"} alt="Profile Picture" />
                     </figure>
                   </div>
                   <div className="grp-info about">
                     <h4>
-                      Georg Peeter <span>@Georgofficial</span>
+                      {displayName} <span>@{username}</span>
                     </h4>
                     <ul className="joined-info">
                       <li>
-                        <span>Joined:</span> April 2020
+                        <span>Joined:</span> {joinDate}
                       </li>
                       <li>
                         <span>Follow:</span> 55K
@@ -594,9 +649,7 @@ const Profile = () => {
                         <div className="col-lg-8 col-md-6">
                           <h4>About Me!</h4>
                           <p>
-                            Hi! My name is Georg Peeter but some people may know
-                            me as peeter! I have a Twitch channel where I
-                            stream, play and review all the newest games.
+                            {bio}
                           </p>
                           <ul className="badges">
                             <li>
@@ -2984,7 +3037,7 @@ const Profile = () => {
                                         Theme
                                       </a>
                                       <p>
-                                        “Winku” is a social community mobile app
+                                        "Winku" is a social community mobile app
                                         kit with features. user can use this app
                                         for sharing blog, posts, timeline,
                                         create Group, Create Pages,
@@ -5840,29 +5893,26 @@ const Profile = () => {
                                 <div className="info-block-list">
                                   <ul>
                                     <li>
-                                      Date of Birth: <span>Dec, 17 1980</span>
+                                      Date of Birth: <span>{dob}</span>
                                     </li>
                                     <li>
                                       Location:{" "}
                                       <span>Los Angeles, California</span>
                                     </li>
                                     <li>
-                                      Web: <span>www.sample.com</span>
+                                      Web: <span>{website}</span>
                                     </li>
                                     <li>
-                                      Email: <span>sample123@yourmail.com</span>
+                                      Email: <span>{email}</span>
                                     </li>
                                     <li>
                                       Location:{" "}
-                                      <span>Los Angeles, California</span>
+                                      <span>{location}</span>
                                     </li>
                                     <li>
                                       Occupation: <span>Doctor</span>
                                     </li>
-                                    <li>
-                                      Location:{" "}
-                                      <span>Los Angeles, California</span>
-                                    </li>
+                                   
                                   </ul>
                                 </div>
                               </div>
@@ -5906,7 +5956,7 @@ const Profile = () => {
                                   <div className="info-block">
                                     <h6>Favourite Games</h6>
                                     <p>
-                                      The First of Us, Assassin’s Squad, Dark
+                                      The First of Us, Assassin's Squad, Dark
                                       Assylum, NMAK16, Last Cause 4, Grand
                                       Snatch Auto.
                                     </p>
@@ -6003,7 +6053,6 @@ const Profile = () => {
     </div>
   </section>
 </>
-
   )
 }
 
